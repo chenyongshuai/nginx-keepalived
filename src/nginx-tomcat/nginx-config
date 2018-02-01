@@ -1,0 +1,48 @@
+1.下载安装nginx
+	(1)安装编译工具及库文件:
+		yum -y install make zlib zlib-devel gcc-c++ libtool  openssl openssl-devel
+		yum -y install wget
+	(2)安装 PCRE:
+		wget http://downloads.sourceforge.net/project/pcre/pcre/8.35/pcre-8.35.tar.gz
+		tar -zxvf pcre-8.35.tar.gz
+		cd pcre-8.35
+		./configure
+		make && make install
+		pcre-config --version
+		mv pcre-8.35 /usr/local/src/
+	(3)安装nginx:
+		wget http://nginx.org/download/nginx-1.8.0.tar.gz
+		tar -zxvf nginx-1.8.0.tar.gz
+		cd nginx-1.8.0
+		./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module --with-pcre=/usr/local/src/pcre-8.35
+		make
+		make install
+		/usr/local/nginx/sbin/nginx -v
+		/usr/local/nginx/sbin/nginx -t
+		cd /usr/local/nginx/sbin/
+		./nginx
+	(4)访问：
+		192.168.xxx.xxx:80
+	(5)关闭:ps -ef | grep nginx
+		   kill -9 processID
+	       启动：./nginx
+	       重启：./nginx -s reload
+2.配置nginx代理tomcat
+	cd /usr/local/nginx/conf
+	vi nginx.conf
+	在http{}中添加：
+	upstream myserver{
+		server 192.168.126.130:8080;
+		server 192.168.126.131:8080;
+	}
+	server{
+		listen 80;
+		server_name 192.168.126.128;
+		location / {
+			proxy_pass http://myserver;
+			index index.jsp index.html index.htm;	
+		}
+	}
+	配置完毕 重启nginx
+		
+		

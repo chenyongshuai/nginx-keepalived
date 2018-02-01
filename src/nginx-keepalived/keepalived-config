@@ -1,0 +1,63 @@
+1.安装keepalived
+	yum install keepalived -y
+	keepalived -v
+2.修改keepalived配置文件
+	global_defs {
+   notification_email {
+     acassen@firewall.loc  #发送邮箱地址
+     failover@firewall.loc
+     sysadmin@firewall.loc
+   }
+   notification_email_from Alexandre.Cassen@firewall.loc
+   smtp_server 192.168.200.1
+   smtp_connect_timeout 30
+   router_id nginx-1 #这里是nginx-1的配置,nginx-2的配置举一反三
+}
+vrrp_script chk_nginx {  
+    script "/etc/keepalived/nginx_check.sh" 
+    interval 2 
+    weight -20
+}  
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth1
+    virtual_router_id 51
+    mcast_src_ip 192.168.126.129
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {  
+        chk_nginx
+    }
+    virtual_ipaddress {
+        192.168.126.126 #nginx-1的虚拟IP
+    }
+}
+vrrp_instance VI_2 {
+    state BACKUP
+    interface eth1
+    virtual_router_id 52
+    mcast_src_ip 192.168.126.129
+    priority 90
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 1111
+    }
+    track_script {
+        chk_nginx
+    }
+    virtual_ipaddress {
+        192.168.126.127 #nginx-2的虚拟IP
+    }
+}
+3.测试
+	cd /usr/local/nginx/conf/
+	./nginx
+	service keepalived start
+	访问：192.168.126.126
+		 192.168.126.127
+	模拟宕机
